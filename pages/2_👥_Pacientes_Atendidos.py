@@ -23,14 +23,30 @@ if df is None or df.empty:
 pac_unicos = df.loc[df["_paciente_norm"] != "", "_paciente_norm"].nunique()
 n_reg = len(df)
 n_serv = df["_servicio"].nunique()
+# Pares únicos paciente + servicio: un paciente atendido en 2 servicios cuenta 2 veces.
+# Este total coincide con la suma de las barras "por servicio".
+pac_x_serv = int(df[df["_paciente_norm"] != ""]
+                 .drop_duplicates(["_paciente_norm", "_servicio"]).shape[0])
+multi_serv = pac_x_serv - int(pac_unicos)  # pacientes atendidos en más de un servicio
 
 kpi_row([
-    {"label": "Pacientes únicos", "icon": "👥", "value": int(pac_unicos)},
+    {"label": "Pacientes únicos (personas)", "icon": "👥", "value": int(pac_unicos),
+     "help_text": "Nombres distintos"},
+    {"label": "Atendidos por servicio", "icon": "🏥", "value": pac_x_serv,
+     "color": COLORS["accent"],
+     "help_text": "Únicos por servicio (suma de las barras)"},
     {"label": "Atenciones (registros)", "icon": "🗂️", "value": int(n_reg),
-     "color": COLORS["accent"]},
-    {"label": "Servicios", "icon": "🏥", "value": int(n_serv),
+     "color": COLORS["secondary"]},
+    {"label": "Servicios", "icon": "🩺", "value": int(n_serv),
      "color": COLORS["success"]},
 ])
+if multi_serv > 0:
+    st.caption(
+        f"ℹ️ Hay **{int(pac_unicos)} pacientes distintos**, pero **{pac_x_serv} "
+        f"atendidos por servicio**: {multi_serv} paciente(s) fueron atendidos en "
+        "más de un servicio y por eso se cuentan en cada uno. La diferencia entre "
+        "ambos totales corresponde a esos casos."
+    )
 st.divider()
 
 # Pacientes únicos por servicio y atenciones por servicio
